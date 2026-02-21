@@ -1,0 +1,3 @@
+{"instruction":"Summarize the following customer issue in one sentence.","input":"User reports intermittent login failures after password reset.","output":"The user experiences occasional login failures following a password reset."}
+{"instruction":"Rewrite this policy in plain language.","input":"All personnel must adhere to established information security protocols at all times.","output":"Everyone must always follow our security rules."}
+{"instruction":"Generate a support response.","input":"Customer asks if weekend support is available.","output":"Thanks for reaching out. Yes, weekend support is available from 9:00 AM to 5:00 PM local time."}
