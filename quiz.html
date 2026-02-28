@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Strategic Finance Mock Test</title>
+
+<style>
+body{font-family:Arial;background:#f0f2f5;margin:0}
+.container{max-width:1100px;margin:auto;padding:20px;background:#fff}
+h2{text-align:center}
+.timer{font-size:20px;color:red;font-weight:bold;float:right}
+.question{margin:20px 0;padding:15px;border:1px solid #ddd;border-radius:8px}
+.options label{display:block;padding:6px;background:#f7f7f7;margin:4px 0;border-radius:5px;cursor:pointer}
+.answered{background:green;color:#fff}
+.correct{background:#c8e6c9!important}
+.wrong{background:#ffcdd2!important}
+button{padding:10px 20px;margin:10px;font-size:16px}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>Strategic Finance – 50 MCQ Test</h2>
+<div class="timer" id="timer">60:00</div>
+
+<form id="quizForm"></form>
+
+<button onclick="submitQuiz()">Submit</button>
+<button onclick="location.reload()">Restart</button>
+
+<h3 id="result"></h3>
+</div>
+
+<div class="palette" id="palette"></div>
+
+<script>
+
+const quizData = [
+{q:"CAPEX primarily creates:",o:["Short-term liability","Long-term benefit","Revenue expenditure","Working capital"],a:1},
+{q:"OPEX is:",o:["Non-recurring","Asset creation","Recurring operational cost","Capital reserve"],a:2},
+{q:"CAPEX is shown under:",o:["Operating","Investing","Financing","Non-cash"],a:1},
+{q:"Depreciation appears in:",o:["Balance sheet","P&L","Cash flow","Equity"],a:1},
+{q:"CAPEX impacts:",o:["Current year","Long-term strategy","Tax only","Shareholders"],a:1},
+
+{q:"Project evaluation focuses on:",o:["PAT","EBITDA","Cash flows","EPS"],a:2},
+{q:"Initial investment is:",o:["Inflow","Outflow","Profit","Revenue"],a:1},
+{q:"Terminal value is:",o:["Working capital","Salvage value","Operating profit","Book value"],a:1},
+{q:"Cash flow shows:",o:["Tax","Liquidity","Depreciation","Reserves"],a:1},
+{q:"Operating cash flow comes from:",o:["Core operations","Loan issue","Share issue","Asset sale"],a:0},
+
+{q:"Land purchase is:",o:["OPEX","CAPEX","Deferred","Liability"],a:1},
+{q:"Transport cost of machine:",o:["Revenue","Capitalized","Contingent","Deferred tax"],a:1},
+{q:"Trial production expense:",o:["OPEX","CAPEX","Loss","Provision"],a:1},
+{q:"Training before production:",o:["Capitalized","Written off","Provision","Liability"],a:0},
+{q:"Transit insurance:",o:["Financial expense","Capitalized","Deferred","Contingent"],a:1},
+
+{q:"Accidental damage due to negligence:",o:["Capitalized","P&L expense","Asset value","Reserve"],a:1},
+{q:"Unloading cost:",o:["OPEX","CAPEX","Provision","Liability"],a:1},
+{q:"Installation cost:",o:["Revenue","Capital","Liability","Equity"],a:1},
+
+{q:"Debt-funded CAPEX in cyclical industry:",o:["High profit","Cash flow stress","Dividend growth","Tax benefit"],a:1},
+{q:"Aircel failure reason:",o:["Low CAPEX","High revenue","High fixed cost low revenue","Low competition"],a:2},
+{q:"EV fleet without charging ecosystem:",o:["High utilization","Asset-heavy inefficiency","Low investment","Profit growth"],a:1},
+{q:"Over-procurement leads to:",o:["Better ROI","Poor utilization","Higher margin","Low cost"],a:1},
+{q:"High CAPEX low cash flow leads to:",o:["Expansion","Insolvency risk","Higher valuation","Bonus issue"],a:1},
+
+{q:"Forecasting predicts:",o:["Past","Future financial position","Audit","Tax"],a:1},
+{q:"Budgeting is:",o:["Revenue projection","Expense planning","Asset valuation","Profit calculation"],a:1},
+{q:"Forecasting is based on:",o:["Assumptions","Only past","Only future","Audit"],a:0},
+{q:"Key driver of projection:",o:["Sales","Tax","Depreciation","Dividend"],a:0},
+{q:"CAGR measures:",o:["Profit margin","Growth rate","Cash flow","Cost"],a:1},
+{q:"Recent data preferred because:",o:["Easy","Relevant","Less data","More profit"],a:1},
+
+{q:"Corporate announcements give:",o:["Strategy","Order wins","Salary","Dividend"],a:1},
+{q:"LODR stands for:",o:["Listing Obligation & Disclosure Requirement","Long-term debt ratio","Legal debt reserve","Listed data"],a:0},
+{q:"CRISIL gives:",o:["Salary","Industry outlook","Tax","Audit"],a:1},
+{q:"Economic Survey gives:",o:["Past only","Future outlook","Salary","Stock price"],a:1},
+{q:"Trade bodies:",o:["RBI","CII FICCI","SEBI","NSE"],a:1},
+
+{q:"Profit =",o:["Asset-liability","Revenue-expense","Equity-debt","Cash-loan"],a:1},
+{q:"PAT is:",o:["Bottom line","Top line","Gross","Operating"],a:0},
+{q:"EBITDA is:",o:["Net profit","Operating profit","Cash flow","Retained earnings"],a:1},
+{q:"Cash profit focuses on:",o:["Liquidity","Tax","Revenue","Equity"],a:0},
+{q:"Traditional objective:",o:["Max sales","Max profit","Max assets","Max tax"],a:1},
+
+{q:"Business must be:",o:["Profitable","Lawful","Manufacturing","Large scale"],a:1},
+{q:"Business is:",o:["Charity","Value exchange","Donation","Loan"],a:1},
+{q:"Profit intention means:",o:["Always profit","Intention to earn","Tax saving","Dividend"],a:1},
+
+{q:"CAPEX aligns with:",o:["HR","Strategy","Tax audit","Dividend"],a:1},
+{q:"Wrong CAPEX leads to:",o:["Growth","Bankruptcy risk","Bonus","Split"],a:1},
+{q:"CAPEX critical in:",o:["Decline","Early growth","Shutdown","Audit"],a:1},
+
+{q:"Total cost of ownership:",o:["Purchase only","Purchase+operating","Depreciation","Tax"],a:1},
+{q:"Financial health assessed by:",o:["Profit","Financial statements","Sales","Assets"],a:1},
+{q:"Scenario analysis is for:",o:["Past","Risk evaluation","Tax","Dividend"],a:1},
+{q:"Stress testing checks:",o:["Profit","Extreme performance","Sales","Equity"],a:1},
+{q:"ROI stands for:",o:["Return on Investment","Rate of Interest","Revenue on Income","Return on Inventory"],a:0}
+];
+
+const form = document.getElementById("quizForm");
+const palette = document.getElementById("palette");
+
+quizData.forEach((item,index)=>{
+let qDiv=document.createElement("div");
+qDiv.classList.add("question");
+qDiv.id="q"+index;
+
+qDiv.innerHTML=`<p>${index+1}. ${item.q}</p>`;
+
+item.o.forEach((opt,i)=>{
+qDiv.innerHTML+=`<label><input type="radio" name="q${index}" value="${i}" onclick="markAnswered(${index})"> ${opt}</label>`;
+});
+
+form.appendChild(qDiv);
+
+let btn=document.createElement("button");
+btn.innerText=index+1;
+btn.type="button";
+btn.onclick=()=>document.getElementById("q"+index).scrollIntoView();
+palette.appendChild(btn);
+});
+
+function markAnswered(i){
+palette.children[i].classList.add("answered");
+}
+
+function submitQuiz(){
+let score=0;
+
+quizData.forEach((item,index)=>{
+let selected=document.querySelector(`input[name="q${index}"]:checked`);
+let options=document.getElementsByName(`q${index}`);
+
+options.forEach((opt,i)=>{
+opt.parentElement.classList.remove("correct","wrong");
+if(i==item.a) opt.parentElement.classList.add("correct");
+});
+
+if(selected){
+if(parseInt(selected.value)===item.a){
+score++;
+}else{
+selected.parentElement.classList.add("wrong");
+}
+}
+});
+
+document.getElementById("result").innerHTML=`Your Score: ${score} / ${quizData.length}`;
+}
+
+//// TIMER ////
+
+let time=60*60;
+const timer=document.getElementById("timer");
+
+const countdown=setInterval(()=>{
+let m=Math.floor(time/60);
+let s=time%60;
+timer.textContent=`${m}:${s<10?"0":""}${s}`;
+time--;
+
+if(time<0){
+clearInterval(countdown);
+alert("Time Up! Submitting...");
+submitQuiz();
+}
+},1000);
+
+</script>
+
+</body>
+</html>
