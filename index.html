@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Machine Learning Regression Simulator</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/regression/2.0.1/regression.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 20px; color: #1f2937; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .controls { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; align-items: center; }
+    select, button { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; cursor: pointer; }
+    button { background-color: #3b82f6; color: white; border: none; font-weight: bold; }
+    button:hover { background-color: #2563eb; }
+    svg { border: 1px solid #e5e7eb; border-radius: 4px; background-color: #ffffff; cursor: crosshair; }
+    .stats { margin-top: 15px; padding: 15px; background-color: #f3f4f6; border-radius: 4px; font-family: monospace; font-size: 14px; }
+    .point { fill: #3b82f6; cursor: pointer; transition: fill 0.2s; }
+    .point:hover { fill: #ef4444; }
+    .regression-line { fill: none; stroke: #10b981; stroke-width: 3; }
+    .residual-line { stroke: #ef4444; stroke-width: 1; stroke-dasharray: 4; opacity: 0.6; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Regression Simulator</h2>
+  <div class="controls">
+    <select id="dataset">
+      <option value="linear">Dataset: Linear Trend</option>
+      <option value="quadratic">Dataset: Quadratic Curve</option>
+      <option value="noisy">Dataset: Noisy Data</option>
+      <option value="outlier">Dataset: Outlier Example</option>
+    </select>
+    
+    <select id="model">
+      <option value="linear">Model: Linear Regression</option>
+      <option value="poly2">Model: Polynomial (Degree 2)</option>
+      <option value="poly3">Model: Polynomial (Degree 3)</option>
+    </select>
+    
+    <label>
+      <input type="checkbox" id="residuals"> Show Residuals
+    </label>
+    
+    <button id="clearBtn">Clear All Points</button>
+  </div>
+
+  <div id="chart"></div>
+  
+  <div class="stats" id="stats">
+    Add data points to calculate regression.
+  </div>
+</div>
+
+<script>
+  const width = 760, height = 400;
+  const margin = {top: 20, right: 20, bottom: 30, left: 40};
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const svg = d3.select("#chart").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Background rectangle to capture clicks
+  svg.append("rect")
+      .attr("width", innerWidth)
+      .attr("height", innerHeight)
+      .attr("fill", "transparent")
+      .on("click", addPoint);
+
+  const xScale = d3.scaleLinear().domain([0, 100]).range([0, innerWidth]);
+  const yScale = d3.scaleLinear().domain([0, 100]).range([innerHeight, 0]);
+
+  svg.append("g").attr("transform", `translate(0,${innerHeight})`).call(d3.axisBottom(xScale));
+  svg.append("g").call(d3.axisLeft(yScale));
+
+  const datasets = {
+    linear: [[10, 20], [20, 35], [30, 30], [40, 50], [50, 45], [60, 65], [70, 60], [80, 85]],
+    quadratic: [[10, 80], [20, 50], [30, 30], [50, 20], [70, 30], [80, 50], [90, 80]],
+    noisy: [[10, 50], [20, 20], [30, 80], [40, 40], [50, 70], [60, 30], [70, 90], [80, 10]],
+    outlier: [[10, 20], [20, 30], [30, 40], [40, 50], [50, 60], [80, 10]] // Last point is outlier
+  };
+
+  let currentPoints = [...datasets.linear];
+
+  function addPoint(event) {
+    const [coords] = d3.pointers(event);
+    const x = xScale.invert(coords[0]);
+    const y = yScale.invert(coords[1]);
+    currentPoints.push([x, y]);
+    update();
+  }
+
+  function removePoint(event, d) {
+    event.stopPropagation();
+    currentPoints = currentPoints.filter(p => p !== d);
+    update();
+  }
+
+  function update() {
+    // 1. Calculate Regression
+    const modelType = document.getElementById("model").value;
+    let result = { points: [], string: "Need more points", equation: [] };
+    
+    if (currentPoints.length > 1) {
+      if (modelType === "linear") {
+        result = regression.linear(currentPoints);
+      } else if (modelType === "poly2") {
+        result = regression.polynomial(currentPoints, { order: 2 });
+      } else if (modelType === "poly3") {
+        result = regression.polynomial(currentPoints, { order: 3 });
+      }
+    }
+
+    // Generate smooth curve points for the line
+    const linePoints = [];
+    if (result.equation && result.equation.length > 0) {
+      for (let i = 0; i <= 100; i += 2) {
+        let y = 0;
+        if (modelType === "linear") {
+          y = result.equation[0] * i + result.equation[1];
+        } else {
+          result.equation.forEach((coeff, power) => {
+            // regression.js returns highest power first
+            const actualPower = result.equation.length - 1 - power; 
+            y += coeff * Math.pow(i, actualPower);
+          });
+        }
+        linePoints.push([i, y]);
+      }
+    }
+
+    // 2. Draw Regression Line
+    const line = d3.line()
+        .x(d => xScale(d[0]))
+        .y(d => yScale(d[1]));
+
+    const path = svg.selectAll(".regression-line").data([linePoints]);
+    path.join("path")
+        .attr("class", "regression-line")
+        .attr("d", line);
+
+    // 3. Draw Residuals (if checked)
+    const showResiduals = document.getElementById("residuals").checked;
+    let mse = 0;
+
+    const residualsData = currentPoints.map(p => {
+      let predictedY = p[1]; // default if no equation
+      if (result.equation && result.equation.length > 0) {
+        if (modelType === "linear") {
+            predictedY = result.predict(p[0])[1];
+        } else {
+            predictedY = result.predict(p[0])[1];
+        }
+        mse += Math.pow(p[1] - predictedY, 2);
+      }
+      return { x: p[0], y1: p[1], y2: predictedY };
+    });
+
+    if (currentPoints.length > 0) mse = (mse / currentPoints.length).toFixed(2);
+
+    const residuals = svg.selectAll(".residual-line")
+        .data(showResiduals && result.equation.length > 0 ? residualsData : []);
+        
+    residuals.join("line")
+        .attr("class", "residual-line")
+        .attr("x1", d => xScale(d.x))
+        .attr("y1", d => yScale(d.y1))
+        .attr("x2", d => xScale(d.x))
+        .attr("y2", d => yScale(d.y2));
+
+    // 4. Draw Points
+    const circles = svg.selectAll(".point").data(currentPoints);
+    circles.join("circle")
+        .attr("class", "point")
+        .attr("cx", d => xScale(d[0]))
+        .attr("cy", d => yScale(d[1]))
+        .attr("r", 6)
+        .on("click", removePoint);
+
+    // 5. Update Stats
+    document.getElementById("stats").innerHTML = `
+      <strong>Equation:</strong> ${result.string || "N/A"}<br>
+      <strong>Mean Squared Error (MSE):</strong> ${mse || "0.00"}
+    `;
+  }
+
+  // Event Listeners
+  document.getElementById("dataset").addEventListener("change", (e) => {
+    currentPoints = [...datasets[e.target.value]];
+    update();
+  });
+  document.getElementById("model").addEventListener("change", update);
+  document.getElementById("residuals").addEventListener("change", update);
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    currentPoints = [];
+    update();
+  });
+
+  // Initial render
+  update();
+</script>
+
+</body>
+</html>
