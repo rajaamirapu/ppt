@@ -1,0 +1,9 @@
+# Use converted GGUF artifact from your fine-tuned model
+FROM /absolute/path/to/your-finetuned-model.gguf
+
+# Optional custom behavior
+SYSTEM "You are an assistant fine-tuned for domain-specific tasks."
+
+# Generation defaults
+PARAMETER temperature 0.2
+PARAMETER num_ctx 4096
